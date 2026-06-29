@@ -23,6 +23,8 @@ pub struct World {
     pub entlist: EntityList,
 
     pub unparsed: Vec<u8>,
+
+    pub modified: bool,
 }
 
 impl World {
@@ -50,6 +52,8 @@ impl DecoderCtx<WorldOffsetSize, ()> for World {
 
         let unparsed = rd.read_bytes(data.len() - rd.offset())?;
 
+        let modified = false;
+
         Ok(World {
             offset,
             size,
@@ -61,6 +65,7 @@ impl DecoderCtx<WorldOffsetSize, ()> for World {
             ssg,
             entlist,
             unparsed,
+            modified,
         })
     }
 

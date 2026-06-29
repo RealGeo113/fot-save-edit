@@ -26,6 +26,10 @@ struct Cli {
     #[arg(short, long)]
     output: String,
 
+    /// Target a specific world chunk index (0 to 11). If omitted, defaults to all or 0.
+    #[arg(long)]
+    world: Option<usize>, // <-- ADD THIS PARAMETER HERE
+
     /// Selected entities ids
     #[arg(long)]
     ids: Option<String>,
@@ -336,57 +340,163 @@ fn do_save(cli: Cli) {
         Ok(save) => save,
         Err(fe) => panic!("{}", fe),
     };
-    let entlist = &save.world.entlist;
 
     match cli.command {
         Commands::ListEntities => {
-            log_entities(entlist, entlist.into_iter());
+            // Check if the user specified a single world chunk
+            if let Some(target_idx) = cli.world {
+                if let Some(world) = save.worlds.get(target_idx) {
+                    println!("--- LISTING ENTITIES IN WORLD CHUNK [{}] ---", target_idx);
+                    log_entities(&world.entlist, (&world.entlist).into_iter());
+                } else {
+                    println!("Error: World index {} out of bounds.", target_idx);
+                }
+            } else {
+                // Default fallback: Print everything, but with a structural header label
+                for (idx, world) in save.worlds.iter().enumerate() {
+                    println!("--- WORLD CHUNK [{}] ENTITIES ---", idx);
+                    log_entities(&world.entlist, (&world.entlist).into_iter());
+                }
+            }
         }
+
         Commands::FindEntities => {
-            log_entities(entlist, find_entities(entlist, cli.find.unwrap()));
+            let search_term = cli.find.clone().unwrap();
+            if let Some(target_idx) = cli.world {
+                if let Some(world) = save.worlds.get(target_idx) {
+                    log_entities(&world.entlist, find_entities(&world.entlist, search_term));
+                }
+            } else {
+                for (idx, world) in save.worlds.iter().enumerate() {
+                    let results = find_entities(&world.entlist, search_term.clone());
+                    // Only print headers if this specific map actually contains matching items
+                    if !results.is_empty() { 
+                        println!("--- FOUND MATCHES IN WORLD CHUNK [{}] ---", idx);
+                        log_entities(&world.entlist, results);
+                    }
+                }
+            }
         }
+
         Commands::ListValues => {
-            for (_, ent) in get_entities(entlist, cli.ids, cli.find) {
-                list_values(ent);
+            let target_world_idx = cli.world.unwrap_or(0);
+
+            if let Some(world) = save.worlds.get(target_world_idx) {
+                println!("--- VALUES IN WORLD CHUNK [{}] ---", target_world_idx);
+                for (_, ent) in get_entities(&world.entlist, cli.ids.clone(), cli.find.clone()) {
+                    list_values(ent);
+                }
+            } else {
+                println!("Error: World index {} out of bounds.", target_world_idx);
             }
         }
+        
         Commands::WriteValue { name, value } => {
-            for (_, ent) in get_entities_mut(&mut save.world.entlist, cli.ids, cli.find) {
-                write_value(ent, &name, &value);
+            let target_world_idx = cli.world.unwrap_or(0);
+
+            if let Some(world) = save.worlds.get_mut(target_world_idx) {
+                for (_, ent) in get_entities_mut(&mut world.entlist, cli.ids.clone(), cli.find.clone()) {
+                    write_value(ent, &name, &value);
+                }
+                println!("Successfully wrote value to World Chunk [{}]", target_world_idx);
+
+                world.modified = true;
+            } else {
+                panic!("Target write world index {} does not exist.", target_world_idx);
             }
+            
             save.save(Path::new(&cli.output)).expect("failed to save");
         }
+
         Commands::ReadNested { nested } => {
-            for (_, ent) in get_entities(entlist, cli.ids, cli.find) {
-                read_nested(ent, &nested)
+            let target_world_idx = cli.world.unwrap_or(0);
+
+            if let Some(world) = save.worlds.get(target_world_idx) {
+                println!("--- NESTED DATA IN WORLD CHUNK [{}] ---", target_world_idx);
+                for (_, ent) in get_entities(&world.entlist, cli.ids.clone(), cli.find.clone()) {
+                    read_nested(ent, &nested);
+                }
+            } else {
+                println!("Error: World index {} out of bounds.", target_world_idx);
             }
         }
+
         Commands::WriteNested { nested, name, value } => {
-            for (_, ent) in get_entities_mut(&mut save.world.entlist, cli.ids, cli.find) {
-                write_nested(ent, &nested, &name, &value)
+            let target_world_idx = cli.world.unwrap_or(0);
+
+            if let Some(world) = save.worlds.get_mut(target_world_idx) {
+                for (_, ent) in get_entities_mut(&mut world.entlist, cli.ids.clone(), cli.find.clone()) {
+                    write_nested(ent, &nested, &name, &value);
+                }
+                println!("Successfully wrote nested parameters to World Chunk [{}]", target_world_idx);
+
+                world.modified = true;
+            } else {
+                panic!("Target write world index {} does not exist.", target_world_idx);
             }
+            
             save.save(Path::new(&cli.output)).expect("failed to save");
         }
+
         Commands::ListAttributes => {
-            for (_, ent) in get_entities(entlist, cli.ids, cli.find) {
-                list_attributes(ent);
+            let target_world_idx = cli.world.unwrap_or(0);
+
+            if let Some(world) = save.worlds.get(target_world_idx) {
+                println!("--- ATTRIBUTES IN WORLD CHUNK [{}] ---", target_world_idx);
+                for (_, ent) in get_entities(&world.entlist, cli.ids.clone(), cli.find.clone()) {
+                    list_attributes(ent);
+                }
+            } else {
+                println!("Error: World index {} out of bounds.", target_world_idx);
             }
         }
+
         Commands::ListModifiers => {
-            for (_, ent) in get_entities(entlist, cli.ids, cli.find) {
-                list_modifiers(ent);
+            let target_world_idx = cli.world.unwrap_or(0);
+
+            if let Some(world) = save.worlds.get(target_world_idx) {
+                println!("--- MODIFIERS IN WORLD CHUNK [{}] ---", target_world_idx);
+                for (_, ent) in get_entities(&world.entlist, cli.ids.clone(), cli.find.clone()) {
+                    list_modifiers(ent);
+                }
+            } else {
+                println!("Error: World index {} out of bounds.", target_world_idx);
             }
         }
+
         Commands::WriteAttribute { group, name, value } => {
-            for (_, ent) in get_entities_mut(&mut save.world.entlist, cli.ids, cli.find) {
-                write_attribute(ent, group.as_str(), name.as_str(), value.as_str());
+            let target_world_idx = cli.world.unwrap_or(0);
+
+            if let Some(world) = save.worlds.get_mut(target_world_idx) {
+                for (_, ent) in get_entities_mut(&mut world.entlist, cli.ids.clone(), cli.find.clone()) {
+                    write_attribute(ent, group.as_str(), name.as_str(), value.as_str());
+                }
+                println!("Successfully wrote attribute to World Chunk [{}]", target_world_idx);
+
+                world.modified = true;
+            } else {
+                panic!("Target write world index {} does not exist.", target_world_idx);
             }
+            
             save.save(Path::new(&cli.output)).expect("failed to save");
         }
+
         Commands::WriteModifier { group, name, value } => {
-            for (_, ent) in get_entities_mut(&mut save.world.entlist, cli.ids, cli.find) {
-                write_modifier(ent, group.as_str(), name.as_str(), value.as_str());
+            // Determine our exact write target index (Defaulting strictly to World 0)
+            let target_world_idx = cli.world.unwrap_or(0);
+
+            if let Some(world) = save.worlds.get_mut(target_world_idx) {
+                for (_, ent) in get_entities_mut(&mut world.entlist, cli.ids.clone(), cli.find.clone()) {
+                    write_modifier(ent, group.as_str(), name.as_str(), value.as_str());
+                }
+                println!("Successfully wrote modifier to World Chunk [{}]", target_world_idx);
+
+                world.modified = true;
+            } else {
+                panic!("Target write world index {} does not exist.", target_world_idx);
             }
+            
+            // Save the entire multi-chunk architecture back safely
             save.save(Path::new(&cli.output)).expect("failed to save");
         }
     }

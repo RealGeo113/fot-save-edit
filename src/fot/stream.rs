@@ -6,7 +6,7 @@ use std::io::Cursor;
 
 pub struct ReadStream<'a> {
     mem: &'a [u8],
-    rdr: Cursor<&'a [u8]>,
+    pub rdr: Cursor<&'a [u8]>,
 }
 
 impl<'a> ReadStream<'a> {

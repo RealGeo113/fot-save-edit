@@ -1,0 +1,19 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Rust with MSVC",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/fot-save-edit.exe",
+            "args": ["--input", "C:\\Users\\grzeg\\Desktop\\Nowy folder (2)\\99.sav", "--output", "C:\\Users\\grzeg\\Desktop\\Nowy folder (2)\\99_new.sav", "--find", "Display Name=CORE_rec_hf03", "--world", "2", "--ids", "989", "list-attributes"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "cargo build"
+        }
+    ]
+}
+
+//      
