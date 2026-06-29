@@ -99,7 +99,7 @@ Note here that we need 3 arguments: ```group``` describes group of attribute, cu
 What I tried to do:
 Since I've decided to relive my childhood memories of playing fallout after a long time, I did a very stupid thing of taking the Swift Learner perk on multiple characters, and only discovered well into my campaign that it does nothing and I just wasted those perk points on nothing.
 
-I found this project and when trying to do as described, realized that while the commands work on very early saves (like saves made during the 1st mission), executing those CLI commands yields no usefull information when doing it on later saves. What I realized is that the code works on early saves because the save file is composed of only 1 `<world>` segment, which contents are compressed, and bigger saves have multiple `<world>`. The code was prepared when all of the save file was in the very first `<world>` segment, but if, like in my case, character info wasn't there, it never found it and therefore, wasn't possible to modify using those commands.
+I found this project and when trying to do as described, realized that while the commands work on very early saves (like saves made during the 1st mission), executing those CLI commands yields no usefull information when doing it on later saves. What I realized is that the code works on early saves because the save file is composed of only 1 `<world>` segment, which contents are compressed, but bigger saves have multiple `<world>` segments. The code was prepared when all of the save information was in the very first `<world>` segment, but if, like in my case, character info wasn't there, it never found it and therefore, wasn't possible to modify using those commands.
 
 Another problem is that due to how it's structurized, while there's only one identifier for entity in one world segments, multiple world segments can and will have the same identifier (by that I mean entity with id X will exists in both world segment 1 and 2)
 
@@ -116,7 +116,7 @@ And to modify that entity, into the `--world` parameter you pass the world chunk
 ```./fot-save-edit.exe --input "./test.sav" --output "./out.sav" --find GuiSlot=6 --world 2 write-nested "Current Attributes" hitPoints 20```
 ![](readme/write-nested-2.webp)
 
-```fot-save-edit.exe --input "out.sav" --output "out.sav" --find GuiSlot=6 write-attribute skills smallGuns 251```
+I tested it using Steam version of Fallout Tactics, not sure if it works on other versions.
 
 I will be leaving this project as is, since I'm not a Rust expert and don't plan to be. My addition were vibe coded and while I accomplished what I wanted, expect bugs
 
